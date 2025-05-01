@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Test Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .custom-shadow { box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+    </style>
+</head>
+<body class="bg-yellow-50">
+    <div class="min-h-screen p-4 md:p-8">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-black mb-2">AI Test Generator</h1>
+            <p class="text-gray-700">Prepare and schedule your tests efficiently</p>
+        </header>
+
+        <!-- Test Configuration Form -->
+        <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg custom-shadow mb-8">
+            <form id="testForm" class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 mb-2">Select Exam Type</label>
+                    <select id="examType" class="w-full p-2 border border-yellow-400 rounded focus:outline-none focus:border-yellow-600">
+                        <option value="">Choose an exam</option>
+                        <option value="programming">Programming</option>
+                        <option value="mathematics">Mathematics</option>
+                        <option value="science">Science</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-gray-700 mb-2">Topics</label>
+                    <input type="text" id="topics" class="w-full p-2 border border-yellow-400 rounded focus:outline-none focus:border-yellow-600" placeholder="Enter topics (comma separated)">
+                </div>
+
+                <div>
+                    <label class="block text-gray-700 mb-2">Difficulty Level</label>
+                    <select id="level" class="w-full p-2 border border-yellow-400 rounded focus:outline-none focus:border-yellow-600">
+                        <option value="beginner">Beginner</option>
+                        <option value="intermediate">Intermediate</option>
+                        <option value="advanced">Advanced</option>
+                    </select>
+                </div>
+
+                <div class="flex space-x-4">
+                    <button type="button" onclick="startTest()" class="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black py-2 px-4 rounded transition duration-300">
+                        Start Test
+                    </button>
+                    <button type="button" onclick="showScheduleModal()" class="flex-1 bg-black hover:bg-gray-800 text-yellow-400 py-2 px-4 rounded transition duration-300">
+                        Schedule Test
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Test Area (Initially Hidden) -->
+        <div id="testArea" class="max-w-2xl mx-auto hidden">
+            <div class="bg-white p-6 rounded-lg custom-shadow">
+                <div id="questionContainer" class="mb-6">
+                    <h3 class="text-xl font-semibold mb-4">Question <span id="questionNumber">1</span>/10</h3>
+                    <p id="questionText" class="mb-4"></p>
+                    <div id="options" class="space-y-2"></div>
+                </div>
+                <button onclick="submitAnswer()" class="bg-yellow-400 hover:bg-yellow-500 text-black py-2 px-4 rounded transition duration-300">
+                    Next Question
+                </button>
+            </div>
+        </div>
+
+        <!-- Results Area (Initially Hidden) -->
+        <div id="resultsArea" class="max-w-2xl mx-auto hidden">
+            <div class="bg-white p-6 rounded-lg custom-shadow">
+                <h2 class="text-2xl font-bold mb-4">Test Results</h2>
+                <div id="resultsSummary"></div>
+                <button onclick="resetTest()" class="mt-4 bg-yellow-400 hover:bg-yellow-500 text-black py-2 px-4 rounded transition duration-300">
+                    Take Another Test
+                </button>
+            </div>
+        </div>
+
+        <!-- Schedule Modal -->
+        <div id="scheduleModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
+            <div class="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+                <h2 class="text-2xl font-bold mb-4">Schedule Test</h2>
+                <form id="scheduleForm" class="space-y-4">
+                    <div>
+                        <label class="block text-gray-700 mb-2">Frequency</label>
+                        <select id="frequency" class="w-full p-2 border border-yellow-400 rounded">
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2">Date</label>
+                        <input type="date" id="scheduleDate" class="w-full p-2 border border-yellow-400 rounded">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2">Time</label>
+                        <input type="time" id="scheduleTime" class="w-full p-2 border border-yellow-400 rounded">
+                    </div>
+                    <div class="flex space-x-4">
+                        <button type="button" onclick="scheduleTest()" class="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black py-2 px-4 rounded">
+                            Schedule
+                        </button>
+                        <button type="button" onclick="closeScheduleModal()" class="flex-1 bg-black hover:bg-gray-800 text-yellow-400 py-2 px-4 rounded">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentQuestion = 0;
+        let questions = [];
+        let answers = [];
+
+        function startTest() {
+            const examType = document.getElementById('examType').value;
+            const topics = document.getElementById('topics').value;
+            const level = document.getElementById('level').value;
+
+            if (!examType || !topics || !level) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            // Generate sample questions (in real app, this would come from API)
+            questions = generateSampleQuestions();
+            currentQuestion = 0;
+            answers = [];
+
+            document.getElementById('testForm').parentElement.classList.add('hidden');
+            document.getElementById('testArea').classList.remove('hidden');
+            showQuestion();
+        }
+
+        function generateSampleQuestions() {
+            return Array(10).fill(null).map((_, i) => ({
+                question: `Sample question ${i + 1}?`,
+                options: ['Option A', 'Option B', 'Option C', 'Option D'],
+                correct: Math.floor(Math.random() * 4)
+            }));
+        }
+
+        function showQuestion() {
+            const question = questions[currentQuestion];
+            document.getElementById('questionNumber').textContent = currentQuestion + 1;
+            document.getElementById('questionText').textContent = question.question;
+            
+            const optionsContainer = document.getElementById('options');
+            optionsContainer.innerHTML = '';
+            question.options.forEach((option, index) => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center space-x-2';
+                div.innerHTML = `
+                    <input type="radio" name="answer" value="${index}" id="option${index}" class="form-radio text-yellow-400">
+                    <label for="option${index}" class="text-gray-700">${option}</label>
+                `;
+                optionsContainer.appendChild(div);
+            });
+        }
+
+        function submitAnswer() {
+            const selected = document.querySelector('input[name="answer"]:checked');
+            if (!selected) {
+                alert('Please select an answer');
+                return;
+            }
+
+            answers.push(parseInt(selected.value));
+
+            if (currentQuestion < 9) {
+                currentQuestion++;
+                showQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('testArea').classList.add('hidden');
+            document.getElementById('resultsArea').classList.remove('hidden');
+
+            const correct = answers.filter((answer, index) => answer === questions[index].correct).length;
+            document.getElementById('resultsSummary').innerHTML = `
+                <p class="text-xl mb-4">You got ${correct} out of 10 questions correct!</p>
+                <div class="space-y-2">
+                    ${questions.map((q, i) => `
+                        <div class="p-2 ${answers[i] === q.correct ? 'bg-green-100' : 'bg-red-100'} rounded">
+                            Question ${i + 1}: ${answers[i] === q.correct ? 'Correct' : 'Incorrect'}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function resetTest() {
+            document.getElementById('resultsArea').classList.add('hidden');
+            document.getElementById('testForm').parentElement.classList.remove('hidden');
+            document.getElementById('testForm').reset();
+        }
+
+        function showScheduleModal() {
+            document.getElementById('scheduleModal').classList.remove('hidden');
+        }
+
+        function closeScheduleModal() {
+            document.getElementById('scheduleModal').classList.add('hidden');
+        }
+
+        function scheduleTest() {
+            const frequency = document.getElementById('frequency').value;
+            const date = document.getElementById('scheduleDate').value;
+            const time = document.getElementById('scheduleTime').value;
+
+            if (!date || !time) {
+                alert('Please select date and time');
+                return;
+            }
+
+            alert(`Test scheduled for ${date} at ${time} (${frequency})`);
+            closeScheduleModal();
+        }
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
